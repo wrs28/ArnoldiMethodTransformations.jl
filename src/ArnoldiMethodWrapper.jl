@@ -52,13 +52,12 @@ function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool=true) where {S,
     @assert supertype(typeof(A))==supertype(typeof(B)) "typeof(A)=$(typeof(A)), typeof(B)=$(typeof(B)). Either both sparse or both dense"
     if diag_inv_B
         if T<:AbstractSparseArray
-            diag_fun = spdiagm
+            α = spdiagm(0=>map(x->1/x,diag(B)))*A-σ*I
             matrix_fun = sparse
         else
-            diag_fun = Diagonal
+            α = Diagonal(map(x->1/x,diag(B)))*A-σ*I
             matrix_fun = Matrix
         end
-        α = diag_fun(0=>map(x->1/x,diag(B)))*A-σ*I
         β = matrix_fun(onetype*I,size(B))
     else
         α = A-σ*B
@@ -71,7 +70,7 @@ end
 """
     a = shift_and_invert(A, σ)
 """
-function ShiftAndInvert(A::S, σ::Number) where S
+function ShiftAndInvert(A::S, σ::Number; kwargs...) where S
     onetype = one(eltype(S))*one(σ)
     if S<:AbstractSparseArray
         return ShiftAndInvert(A, sparse(onetype*I,size(A)...), σ; diag_inv_B=true)
