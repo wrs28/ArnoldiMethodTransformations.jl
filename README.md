@@ -40,14 +40,14 @@ A = rand(ComplexF64,10,10)
 B = rand(ComplexF64,10,10)
 
 # find eigenpairs closest to .5
-decomp, hist = partialschur(A,B,.51; diag_inv_B=false)
+decomp, hist = partialschur(A,B,.5)
 
 # get evecs
 _, v = partialeigen(decomp)
 
 display(decomp.eigenvalues)
 norm(A*v-B*v*diagm(0=>decomp.eigenvalues))
-# should be ~1e-11 or smaller
+# should be ~1e-14 or smaller
 ````
 
 ## Methods
