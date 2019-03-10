@@ -1,7 +1,5 @@
 module ArnoldiMethodWrapper
 
-export ShiftAndInvert
-
 using ArnoldiMethod,
 LinearAlgebra,
 LinearMaps,
