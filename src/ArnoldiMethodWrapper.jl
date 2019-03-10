@@ -54,6 +54,7 @@ function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool=true) where {S,
             matrix_fun = sparse
         else
             α = Diagonal(map(x->1/x,diag(B)))*A-σ*I
+            display(α)
             matrix_fun = Matrix
         end
         β = matrix_fun(onetype*I,size(B))
@@ -84,7 +85,7 @@ function ArnoldiMethod.partialschur(si::ShiftAndInvert; kwargs...)
     decomp.eigenvalues[:] = si.σ .+ 1 ./decomp.eigenvalues[:]
     return decomp, history
 end
-ArnoldiMethod.partialschur(A, σ::Number; kwargs...) = partialschur(ShiftAndInvert(A, σ; diag_inv_B=true); kwargs...)
-ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=true, kwargs...) = partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
+ArnoldiMethod.partialschur(A, σ::Number; kwargs...) = partialschur(ShiftAndInvert(A, σ); kwargs...)
+ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) = partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
 
 end # module ArnoldiMethodWrapper
