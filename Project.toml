@@ -2,3 +2,9 @@ name = "ArnoldiMethodWrapper"
 uuid = "fede57cc-428a-11e9-3e5c-c149a0a4072d"
 authors = ["William R Sweeney <wrsweeney2@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
