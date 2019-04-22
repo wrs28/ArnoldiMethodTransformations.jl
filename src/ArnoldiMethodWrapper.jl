@@ -5,11 +5,10 @@ Provides convenience wrapper for accessing the package ArnoldiMethod.
 
 Implements the shift-and-invert transformation indicated [here](https://haampie.github.io/ArnoldiMethod.jl/stable/).
 
-Main export is `partialschur(A,[B],σ;kwargs...)` and `partialeigen(A,[B],σ;kwargs...)`
+Main function is `partialschur(A,[B],σ;kwargs...)` and `partialeigen(A,[B],σ;kwargs...)`
 """
 module ArnoldiMethodWrapper
 
-export partialeigen
 
 using ArnoldiMethod,
 LinearAlgebra,
@@ -119,14 +118,14 @@ For other keywords, see ArnoldiMethod.partialschur
 
 see also: [`partialschur`](@ref), [`partialeigen`](@ref) in ArnoldiMethod
 """
-function partialeigen(si::ShiftAndInvert; kwargs...)
+function ArnoldiMethod.partialeigen(si::ShiftAndInvert; kwargs...)
     decomp, history = partialschur(si; kwargs...)
     λ, v = partialeigen(decomp)
     get(kwargs,:untransform,true) ? λ = si.σ .+ 1 ./λ : nothing
     return λ, v, history
 end
-partialeigen(A, σ::Number; kwargs...) = partialeigen(ShiftAndInvert(A, σ); kwargs...)
-partialeigen(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) = partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
+ArnoldiMethod.partialeigen(A, σ::Number; kwargs...) = partialeigen(ShiftAndInvert(A, σ); kwargs...)
+ArnoldiMethod.partialeigen(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) = partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
 
 
 end # module ArnoldiMethodWrapper
