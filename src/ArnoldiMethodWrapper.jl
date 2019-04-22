@@ -1,9 +1,21 @@
+"""
+    module ArnoldiMethodWrapper
+
+Provides convenience wrapper for accessing the package ArnoldiMethod.
+
+Implements the shift-and-invert transformation indicated [here](https://haampie.github.io/ArnoldiMethod.jl/stable/).
+
+Main export is `partialschur(A,[B],σ;kwargs...)` and `partialeigen(A,[B],σ;kwargs...)`
+"""
 module ArnoldiMethodWrapper
+
+export partialeigen
 
 using ArnoldiMethod,
 LinearAlgebra,
 LinearMaps,
 SparseArrays
+
 
 """
     type ShiftAndInvert{T,U,V}
@@ -79,13 +91,42 @@ function ShiftAndInvert(A::S, σ::Number; kwargs...) where S
 end
 
 
+"""
+    partialschur(A,[B],σ; diag_inv_B=false, kwargs...) -> decomp, history
+
+Partial Schur decomposition of `A`, with shift `σ` with mass matrix `B`, solving `Av=σBv`
+
+For other keywords, see ArnoldiMethod.partialschur
+
+see also: [`partialeigen`](@ref) in ArnoldiMethod
+"""
 function ArnoldiMethod.partialschur(si::ShiftAndInvert; kwargs...)
     a = LinearMap{eltype(si.B)}(si, size(si.B,1); ismutating=true, issymmetric=si.issymmetric)
-    decomp, history = partialschur(a; kwargs...)
-    decomp.eigenvalues[:] = si.σ .+ 1 ./decomp.eigenvalues[:]
-    return decomp, history
+    return partialschur(a; kwargs...)
 end
 ArnoldiMethod.partialschur(A, σ::Number; kwargs...) = partialschur(ShiftAndInvert(A, σ); kwargs...)
 ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) = partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
+
+
+"""
+    partialeigen(A,[B],σ; diag_inv_B=false, untransform=true, kwargs...) -> (λ::Vector, v::Matrix)
+
+Partial eigendecomposition of `A`, with mass matrix `B` and shift `σ` , solving `Av=λBv` for the eigenvalues closests to `σ`
+
+If keyword `untransform=true`, the shift-invert transformation of the eigenvalues is inverted before returning
+
+For other keywords, see ArnoldiMethod.partialschur
+
+see also: [`partialschur`](@ref), [`partialeigen`](@ref) in ArnoldiMethod
+"""
+function partialeigen(si::ShiftAndInvert; kwargs...)
+    decomp, history = partialschur(si; kwargs...)
+    λ, v = partialeigen(decomp)
+    get(kwargs,:untransform,true) ? λ = si.σ .+ 1 ./λ : nothing
+    return λ, v
+end
+partialeigen(A, σ::Number; kwargs...) = partialeigen(ShiftAndInvert(A, σ); kwargs...)
+partialeigen(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) = partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
+
 
 end # module ArnoldiMethodWrapper
