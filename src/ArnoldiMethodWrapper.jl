@@ -92,7 +92,7 @@ end
 
 
 """
-    partialschur(A,[B],σ; diag_inv_B=false, kwargs...) -> decomp, history
+    partialschur(A,[B],σ; diag_inv_B=false, kwargs...) -> Decomp, History
 
 Partial Schur decomposition of `A`, with shift `σ` with mass matrix `B`, solving `Av=σBv`
 
@@ -109,7 +109,7 @@ ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) 
 
 
 """
-    partialeigen(A,[B],σ; diag_inv_B=false, untransform=true, kwargs...) -> (λ::Vector, v::Matrix)
+    partialeigen(A,[B],σ; diag_inv_B=false, untransform=true, kwargs...) -> (λ::Vector, v::Matrix, History)
 
 Partial eigendecomposition of `A`, with mass matrix `B` and shift `σ` , solving `Av=λBv` for the eigenvalues closests to `σ`
 
@@ -123,7 +123,7 @@ function partialeigen(si::ShiftAndInvert; kwargs...)
     decomp, history = partialschur(si; kwargs...)
     λ, v = partialeigen(decomp)
     get(kwargs,:untransform,true) ? λ = si.σ .+ 1 ./λ : nothing
-    return λ, v
+    return λ, v, history
 end
 partialeigen(A, σ::Number; kwargs...) = partialeigen(ShiftAndInvert(A, σ); kwargs...)
 partialeigen(A, B, σ::Number; diag_inv_B::Bool=false, kwargs...) = partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B); kwargs...)
