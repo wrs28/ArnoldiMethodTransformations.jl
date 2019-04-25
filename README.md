@@ -51,7 +51,7 @@ norm(A*v-B*v*diagm(0=>decomp.eigenvalues))
 ````
 
 ## Methods
-This package exports no methods, but extends `partialschur` from [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl).
+This package exports no methods, but extends `partialschur`  and `partialeigen` from [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl).
 
 The new methods are:
 

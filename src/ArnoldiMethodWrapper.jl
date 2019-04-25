@@ -15,6 +15,7 @@ const MUMPS_BOOL = haskey(ENV,"MUMPS_PREFIX")
 using ArnoldiMethod,
 LinearAlgebra,
 LinearMaps,
+MPI,
 MUMPS3,
 Pardiso,
 SparseArrays
@@ -54,6 +55,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
     A_lu::T
     B::U
     temp::V
+    temp2::V
     σ::Σ
     issymmetric::Bool
 
@@ -85,6 +87,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
             β = onetype*B
         end
         temp = Vector{type}(undef,size(α,1))
+        temp2 = Vector{type}(undef,size(α,1))
         if method ∈ [:Pardiso,:pardiso,:PARDISO,:p]
             M = PSolver
             A_lu = PardisoSolver()
@@ -95,7 +98,9 @@ struct ShiftAndInvert{M,T,U,V,Σ}
             set_phase!(A_lu,33) # set to solve for future calls
         elseif method ∈ [:MUMPS,:Mumps,:mumps,:m]
             M = MSolver
-            throw("not yet")
+            MPI.Initialized() ? nothing : MPI.Init()
+            MPI.finalize_atexit()
+            A_lu = mumps_factorize(α)
         elseif method ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
             M = USolver
             A_lu = lu(α)
@@ -103,7 +108,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
             throw("unrecognized method $method, must be one of :Pardiso, :MUMPS, :UMFPACK")
         end
         issym = issymmetric(α)*issymmetric(β)
-        return new{M,typeof(A_lu),typeof(β),typeof(temp),typeof(σ)}(A_lu,β,temp,σ,issym)
+        return new{M,typeof(A_lu),typeof(β),typeof(temp),typeof(σ)}(A_lu,β,temp,temp2,σ,issym)
     end
     function ShiftAndInvert(A::S, σ::Number; kwargs...) where S
         onetype = one(eltype(S))*one(σ)
@@ -119,15 +124,12 @@ end
 function (SI::ShiftAndInvert{M})(y,x) where M<:AbstractSolver
     mul!(SI.temp, SI.B, x)
     if M<:PSolver
-        pardiso(SI.A_lu,SI.temp,spzeros(size(SI.B)...),SI.temp)
+        pardiso(SI.A_lu,SI.temp2,spzeros(size(SI.B)...),SI.temp)
         for i ∈ eachindex(y)
-            y[i] = SI.temp[i]
+            y[i] = SI.temp2[i]
         end
-    elseif M<:MSolver
-        mumps_solve!(y,SI.A_lu,SI.temp)
-    else M<:USolver
-        ldiv!(y, SI.A_lu, SI.temp)
     end
+    ldiv!(y, SI.A_lu, SI.temp)
     return nothing
 end
 
