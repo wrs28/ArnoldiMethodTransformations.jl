@@ -69,7 +69,8 @@ struct ShiftAndInvert{M,T,U,V,Σ}
                 method=:umfpack
             end
         end
-        onetype = one(eltype(S))*one(eltype(T))*one(σ) ; type = typeof(onetype)
+        onetype = one(eltype(S))*one(eltype(T))*one(σ)
+        type = typeof(onetype)
         A, B = onetype*A, onetype*B
         @assert supertype(typeof(A))==supertype(typeof(B)) "typeof(A)=$(typeof(A)), typeof(B)=$(typeof(B)). Either both sparse or both dense"
         if diag_inv_B
@@ -88,26 +89,11 @@ struct ShiftAndInvert{M,T,U,V,Σ}
         end
         temp = Vector{type}(undef,size(α,1))
         temp2 = Vector{type}(undef,size(α,1))
-        if method ∈ [:Pardiso,:pardiso,:PARDISO,:p]
-            M = PSolver
-            A_lu = PardisoSolver()
-            set_iparm!(A_lu,1,1) # don't revert to defaults
-            set_phase!(A_lu,12) # analyze and factorize
-            pardiso(A_lu,temp,α,temp)
-            set_iparm!(A_lu,12,1) # transpose b/c of CSR vs SCS
-            set_phase!(A_lu,33) # set to solve for future calls
-        elseif method ∈ [:MUMPS,:Mumps,:mumps,:m]
-            M = MSolver
-            MPI.Initialized() ? nothing : MPI.Init()
-            MPI.finalize_atexit()
-            A_lu = mumps_factorize(α)
-        elseif method ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
-            M = USolver
-            A_lu = lu(α)
-        else
-            throw("unrecognized method $method, must be one of :Pardiso, :MUMPS, :UMFPACK")
-        end
         issym = issymmetric(α)*issymmetric(β)
+
+        # initialize according to package used
+        M, A_lu = initialize_according_to_package(method,issym,type,α,temp,temp2)
+
         return new{M,typeof(A_lu),typeof(β),typeof(temp),typeof(σ)}(A_lu,β,temp,temp2,σ,issym)
     end
     function ShiftAndInvert(A::S, σ::Number; kwargs...) where S
@@ -124,14 +110,48 @@ end
 function (SI::ShiftAndInvert{M})(y,x) where M<:AbstractSolver
     mul!(SI.temp, SI.B, x)
     if M<:PSolver
-        pardiso(SI.A_lu,SI.temp2,spzeros(size(SI.B)...),SI.temp)
+        pardiso(SI.A_lu,SI.temp2,spzeros(eltype(SI.B),size(SI.B)...),SI.temp)
         for i ∈ eachindex(y)
             y[i] = SI.temp2[i]
         end
+    else
+        ldiv!(y, SI.A_lu, SI.temp)
     end
-    ldiv!(y, SI.A_lu, SI.temp)
     return nothing
 end
+
+function initialize_according_to_package(method,issym,type,α,temp1,temp2)
+    if method ∈ [:Pardiso,:pardiso,:PARDISO,:p]
+        M = PSolver
+        A_lu = PardisoSolver()
+        if issym & (type<:Real)
+            set_matrixtype!(A_lu,Pardiso.REAL_SYM)
+        elseif issym & (type<:Complex)
+            set_matrixtype!(A_lu,Pardiso.COMPLEX_SYM)
+        elseif !issym & (type<:Real)
+            set_matrixtype!(A_lu,Pardiso.REAL_NONSYM)
+        else # if !issym & type<:Complex
+            set_matrixtype!(A_lu,Pardiso.COMPLEX_NONSYM)
+        end
+        set_iparm!(A_lu,1,1) # don't revert to defaults
+        set_phase!(A_lu,12) # analyze and factorize
+        pardiso(A_lu,temp2,α,temp1)
+        set_iparm!(A_lu,12,1) # transpose b/c of CSR vs SCS
+        set_phase!(A_lu,33) # set to solve for future calls
+    elseif method ∈ [:MUMPS,:Mumps,:mumps,:m]
+        M = MSolver
+        MPI.Initialized() ? nothing : MPI.Init()
+        MPI.finalize_atexit()
+        A_lu = mumps_factorize(α)
+    elseif method ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
+        M = USolver
+        A_lu = lu(α)
+    else
+        throw("unrecognized method $method, must be one of :Pardiso, :MUMPS, :UMFPACK")
+    end
+    return M, A_lu
+end
+
 
 
 """
