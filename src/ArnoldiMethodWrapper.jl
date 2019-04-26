@@ -34,7 +34,7 @@ Container for arrays in `ArnoldiMethod.partialschur`
 
 -------------
 
-    function ShiftAndInvert(A, [B], σ; diag_inv_B=isdiag(B), method=:auto) -> si
+    function ShiftAndInvert(A, [B], σ; diag_inv_B=isdiag(B), lupack=:auto) -> si
 
 create a LinearMap object to feed to ArnoldiMethod.partialschur which transforms `Ax=λBx` into `(A-σB)⁻¹Bx=x/(λ-σ)`.
 
@@ -42,7 +42,7 @@ Set `diag_inv_B=true` if `B` is both diagonal and invertible, so that it is easy
 
 `A` and `B` must both be sparse or both dense. `A`, `B`, `σ` need not have common element type.
 
-Keyword `method` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
+Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
 and the default `:auto`, which chooses based on availability in this order: PARDISO > MUMPS > UMFPACK.
 
 ----------
@@ -59,14 +59,14 @@ struct ShiftAndInvert{M,T,U,V,Σ}
     σ::Σ
     issymmetric::Bool
 
-    function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool, method::Symbol) where {S,T}
-        if method==:auto
+    function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool, lupack::Symbol) where {S,T}
+        if lupack==:auto
             if PARDISO_BOOL
-                method=:pardiso
+                lupack=:pardiso
             elseif MUMPS_BOOL
-                method=:mumps
+                lupack=:mumps
             else
-                method=:umfpack
+                lupack=:umfpack
             end
         end
         onetype = one(eltype(S))*one(eltype(T))*one(σ)
@@ -92,7 +92,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
         issym = issymmetric(α)*issymmetric(β)
 
         # initialize according to package used
-        M, A_lu = initialize_according_to_package(method,issym,type,α,temp,temp2)
+        M, A_lu = initialize_according_to_package(lupack,issym,type,α,temp,temp2)
 
         return new{M,typeof(A_lu),typeof(β),typeof(temp),typeof(σ)}(A_lu,β,temp,temp2,σ,issym)
     end
@@ -120,8 +120,8 @@ function (SI::ShiftAndInvert{M})(y,x) where M<:AbstractSolver
     return nothing
 end
 
-function initialize_according_to_package(method,issym,type,α,temp1,temp2)
-    if method ∈ [:Pardiso,:pardiso,:PARDISO,:p]
+function initialize_according_to_package(lupack,issym,type,α,temp1,temp2)
+    if lupack ∈ [:Pardiso,:pardiso,:PARDISO,:p]
         M = PSolver
         A_lu = PardisoSolver()
         if issym & (type<:Real)
@@ -138,16 +138,16 @@ function initialize_according_to_package(method,issym,type,α,temp1,temp2)
         pardiso(A_lu,temp2,α,temp1)
         set_iparm!(A_lu,12,1) # transpose b/c of CSR vs SCS
         set_phase!(A_lu,33) # set to solve for future calls
-    elseif method ∈ [:MUMPS,:Mumps,:mumps,:m]
+    elseif lupack ∈ [:MUMPS,:Mumps,:mumps,:m]
         M = MSolver
         MPI.Initialized() ? nothing : MPI.Init()
         MPI.finalize_atexit()
         A_lu = mumps_factorize(α)
-    elseif method ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
+    elseif lupack ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
         M = USolver
         A_lu = lu(α)
     else
-        throw("unrecognized method $method, must be one of :Pardiso, :MUMPS, :UMFPACK")
+        throw("unrecognized lupack $lupack, must be one of :Pardiso, :MUMPS, :UMFPACK")
     end
     return M, A_lu
 end
@@ -155,14 +155,14 @@ end
 
 
 """
-    partialschur(A, [B], σ; [diag_inv_B, method=:auto, kwargs...]) -> decomp, history
+    partialschur(A, [B], σ; [diag_inv_B, lupack=:auto, kwargs...]) -> decomp, history
 
 Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=σB*v`
 
 Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables
 a simplified shift-and-invert scheme.
 
-Keyword `method` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
+Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
 and the default `:auto`, which chooses based on availability in this order: PARDISO > MUMPS > UMFPACK.
 
 For other keywords, see ArnoldiMethod.partialschur
@@ -173,16 +173,16 @@ function ArnoldiMethod.partialschur(si::ShiftAndInvert; kwargs...)
     a = LinearMap{eltype(si.B)}(si, size(si.B,1); ismutating=true, issymmetric=si.issymmetric)
     return partialschur(a; kwargs...)
 end
-function ArnoldiMethod.partialschur(A, σ::Number; method::Symbol=:auto, kwargs...)
-    partialschur(ShiftAndInvert(A, σ; method=method); kwargs...)
+function ArnoldiMethod.partialschur(A, σ::Number; lupack::Symbol=:auto, kwargs...)
+    partialschur(ShiftAndInvert(A, σ; lupack=lupack); kwargs...)
 end
-function ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), method=:auto, kwargs...)
-    partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, method=method); kwargs...)
+function ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), lupack=:auto, kwargs...)
+    partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, lupack=lupack); kwargs...)
 end
 
 
 """
-    partialeigen(A, [B], σ; [diag_inv_B, untransform=true, method=:auto, kwargs...]) -> λ::Vector, v::Matrix, history
+    partialeigen(A, [B], σ; [diag_inv_B, untransform=true, lupack=:auto, kwargs...]) -> λ::Vector, v::Matrix, history
 
 Partial eigendecomposition of `A`, with mass matrix `B` and shift `σ` , solving `A*v=λB*v` for the eigenvalues closest to `σ`
 
@@ -191,7 +191,7 @@ If keyword `untransform=true`, the shift-invert transformation of the eigenvalue
 Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables
 a simplified shift-and-invert scheme.
 
-Keyword `method` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`, and `:auto`,
+Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`, and `:auto`,
 which chooses based on availability in this order: PARDISO > MUMPS > UMFPACK.
 
 For other keywords, see ArnoldiMethod.partialschur
@@ -204,11 +204,11 @@ function ArnoldiMethod.partialeigen(si::ShiftAndInvert; kwargs...)
     get(kwargs,:untransform,true) ? λ = si.σ .+ 1 ./λ : nothing
     return λ, v, history
 end
-function ArnoldiMethod.partialeigen(A, σ::Number; method::Symbol=:auto, kwargs...)
-    partialeigen(ShiftAndInvert(A, σ; method=method); kwargs...)
+function ArnoldiMethod.partialeigen(A, σ::Number; lupack::Symbol=:auto, kwargs...)
+    partialeigen(ShiftAndInvert(A, σ; lupack=lupack); kwargs...)
 end
-function ArnoldiMethod.partialeigen(A, B, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), method::Symbol=:auto, kwargs...)
-    partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, method=method); kwargs...)
+function ArnoldiMethod.partialeigen(A, B, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), lupack::Symbol=:auto, kwargs...)
+    partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, lupack=lupack); kwargs...)
 end
 
 
