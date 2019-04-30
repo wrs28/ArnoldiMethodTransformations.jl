@@ -2,7 +2,6 @@ name = "ArnoldiMethodWrapper"
 uuid = "fede57cc-428a-11e9-3e5c-c149a0a4072d"
 repo = "https://github.com/wrs28/ArnoldiMethodWrapper.jl.git"
 
-
 [deps]
 ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
