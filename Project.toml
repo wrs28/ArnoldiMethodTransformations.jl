@@ -1,0 +1,13 @@
+name = "ArnoldiMethodWrapper"
+uuid = "fede57cc-428a-11e9-3e5c-c149a0a4072d"
+repo = "https://github.com/wrs28/ArnoldiMethodWrapper.jl.git"
+
+
+[deps]
+ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LinearMaps = "7a12625a-238d-50fd-b39a-03d52299707e"
+MPI = "da04e1cc-30fd-572f-bb4f-1f8673147195"
+MUMPS3 = "8158958c-316f-11e9-3ff7-338d4f1f622e"
+Pardiso = "46dd5b70-b6fb-5a00-ae2d-e8fea33afaf2"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
