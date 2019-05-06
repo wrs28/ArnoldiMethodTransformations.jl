@@ -16,7 +16,7 @@ using ArnoldiMethod,
 LinearAlgebra,
 LinearMaps,
 MPI,
-MUMPS3,
+# MUMPS3,
 Pardiso,
 SparseArrays
 
@@ -28,7 +28,7 @@ struct USolver <: AbstractSolver end
 
 
 """
-    module ShiftAndInvert{M,T,U,V,Σ}
+    struct ShiftAndInvert{M,T,U,V,Σ}
 
 Container for arrays in `ArnoldiMethod.partialschur`
 
@@ -59,7 +59,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
     σ::Σ
     issymmetric::Bool
 
-    function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool, lupack::Symbol) where {S,T}
+    function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool, lupack::Symbol=:auto) where {S,T}
         if lupack==:auto
             if PARDISO_BOOL
                 lupack=:pardiso
