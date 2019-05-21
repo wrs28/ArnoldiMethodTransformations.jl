@@ -15,7 +15,7 @@ const MUMPS_BOOL = haskey(ENV,"MUMPS_PREFIX")
 using ArnoldiMethod,
 LinearAlgebra,
 LinearMaps,
-MPI,
+# MPI,
 # MUMPS3,
 Pardiso,
 SparseArrays
