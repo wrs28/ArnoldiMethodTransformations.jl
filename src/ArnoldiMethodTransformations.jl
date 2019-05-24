@@ -9,23 +9,29 @@ The main functions are `partialschur(A,[B],σ; kwargs...)` and `partialeigen(A,[
 """
 module ArnoldiMethodWrapper
 
-const PARDISO_BOOL = haskey(ENV,"JULIA_PARDISO")
-const MUMPS_BOOL = haskey(ENV,"MUMPS_PREFIX")
+using Requires
+
+function __init__()
+    LUPACK_AUTO=:umfpack
+    @require MUMPS3="" @eval begin
+            using MUMPS3, MPI
+            LUPACK_AUTO=:mumps
+        end
+    @require Pardiso="" @eval begin
+            using Pardiso
+            LUPACK_AUTO=:pardiso
+        end
+end
 
 using ArnoldiMethod,
 LinearAlgebra,
 LinearMaps,
-# MPI,
-# MUMPS3,
-Pardiso,
 SparseArrays
-
 
 abstract type AbstractSolver end
 struct PSolver <: AbstractSolver end
 struct MSolver <: AbstractSolver end
 struct USolver <: AbstractSolver end
-
 
 """
     struct ShiftAndInvert{M,T,U,V,Σ}
@@ -43,7 +49,9 @@ Set `diag_inv_B=true` if `B` is both diagonal and invertible, so that it is easy
 `A` and `B` must both be sparse or both dense. `A`, `B`, `σ` need not have common element type.
 
 Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
-and the default `:auto`, which chooses based on availability in this order: PARDISO > MUMPS > UMFPACK.
+and the default `:auto`, which chooses based on availability at the top level, in this order:
+PARDISO > MUMPS > UMFPACK. For example, if at the top level there is `using ArnoldiMethod, ArnoldiMethodTransformations`,
+will default to UMFPACK, while the additional `using MUMPS3` will default to `:mumps`, and so on.
 
 ----------
 
@@ -60,15 +68,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
     issymmetric::Bool
 
     function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool, lupack::Symbol=:auto) where {S,T}
-        if lupack==:auto
-            if PARDISO_BOOL
-                lupack=:pardiso
-            elseif MUMPS_BOOL
-                lupack=:mumps
-            else
-                lupack=:umfpack
-            end
-        end
+        lupack==:auto ? lupack=LUPACK_AUTO : nothing
         onetype = one(eltype(S))*one(eltype(T))*one(σ)
         type = typeof(onetype)
         A, B = onetype*A, onetype*B
@@ -108,6 +108,11 @@ end
 
 # define action of ShiftAndInvert
 function (SI::ShiftAndInvert{M})(y,x) where M<:AbstractSolver
+    if M<:PSolver
+        try pardiso catch throw(ErrorException("Pardiso not loaded. Try again after `using Pardiso`")) end
+    elseif M<:MSolver
+        try Mumps catch throw(ErrorException("MUMPS3 not loaded. Try again after `using MUMPS3`")) end
+    end
     mul!(SI.temp, SI.B, x)
     if M<:PSolver
         pardiso(SI.A_lu,SI.temp2,spzeros(eltype(SI.B),size(SI.B)...),SI.temp)
@@ -141,7 +146,6 @@ function initialize_according_to_package(lupack,issym,type,α,temp1,temp2)
     elseif lupack ∈ [:MUMPS,:Mumps,:mumps,:m]
         M = MSolver
         MPI.Initialized() ? nothing : MPI.Init()
-        MPI.finalize_atexit()
         A_lu = mumps_factorize(α)
     elseif lupack ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
         M = USolver
@@ -163,7 +167,9 @@ Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. 
 a simplified shift-and-invert scheme.
 
 Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
-and the default `:auto`, which chooses based on availability in this order: PARDISO > MUMPS > UMFPACK.
+and the default `:auto`, which chooses based on availability at the top level, in this order:
+PARDISO > MUMPS > UMFPACK. For example, if at the top level there is `using ArnoldiMethod, ArnoldiMethodTransformations`,
+will default to UMFPACK, while the additional `using MUMPS3` will default to `:mumps`, and so on.
 
 For other keywords, see ArnoldiMethod.partialschur
 
@@ -191,8 +197,10 @@ If keyword `untransform=true`, the shift-invert transformation of the eigenvalue
 Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables
 a simplified shift-and-invert scheme.
 
-Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`, and `:auto`,
-which chooses based on availability in this order: PARDISO > MUMPS > UMFPACK.
+Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:mumps`, `:umfpack`,
+and the default `:auto`, which chooses based on availability at the top level, in this order:
+PARDISO > MUMPS > UMFPACK. For example, if at the top level there is `using ArnoldiMethod, ArnoldiMethodTransformations`,
+will default to UMFPACK, while the additional `using MUMPS3` will default to `:mumps`, and so on.
 
 For other keywords, see ArnoldiMethod.partialschur
 
