@@ -27,7 +27,7 @@ A = S\D*S
 decomp, hist = partialschur(A,5.001)
 
 # get evecs
-λ, v = partialeigen(decomp)
+λ, v = partialeigen(decomp,.5001)
 
 display(decomp.eigenvalues)
 norm(A*v-v*diagm(0=>decomp.eigenvalues))
@@ -46,7 +46,7 @@ B = rand(ComplexF64,10,10)
 decomp, hist = partialschur(A,B,.5)
 
 # get evecs
-λ, v = partialeigen(decomp)
+λ, v = partialeigen(decomp,.5)
 
 display(decomp.eigenvalues)
 norm(A*v-B*v*diagm(0=>decomp.eigenvalues))
@@ -60,13 +60,17 @@ This package exports no methods, but extends `partialschur`  and `partialeigen` 
 
 The new methods are:
 
-
 `partialschur(A,σ; kwargs...) -> decomp, hist` which shift-and-inverts `A` by `σ`. The eigenvalues returned are those closest to `σ`.
-
 
 `partialschur(A,B,σ; diag_inv_B=false, kwargs...) -> decomp, hist` which shift-and-inverts the generalized eigenvalue problem `Ax=σBx`, as described [here](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Spectral-transformations-1). `diag_inv_B=true` means that `B` is diagonal and invertible, which makes for an especially efficient transformation.
 
-For both, `kwargs` are the keyword arguments from [`ArnoldiMethod.partialschur`](https://haampie.github.io/ArnoldiMethod.jl/stable/usage/01_getting_started.html#ArnoldiMethod.partialschur)
+`partialeigen(decomp,σ) -> λ,v` which does the same thing as `partialeigen(decomp)`, but undoes the shift `σ`.
+
+`partialeigen(A,σ; kwargs...) -> λ,v` which shift-and-inverts `A` by `σ`. The eigenvalues returned are those closest to `σ`.
+
+`partialeigen(A,B,σ; diag_inv_B=false, kwargs...) -> λ,v` which shift-and-inverts the generalized eigenvalue problem `Ax=σBx`, as described [here](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Spectral-transformations-1). `diag_inv_B=true` means that `B` is diagonal and invertible, which makes for an especially efficient transformation.
+
+For all, `kwargs` are the keyword arguments from [`ArnoldiMethod.partialschur`](https://haampie.github.io/ArnoldiMethod.jl/stable/usage/01_getting_started.html#ArnoldiMethod.partialschur).
 
 Note that the shifting to an exact eigenvalue poses a problem, see note on [purification](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Purification-1).
 
