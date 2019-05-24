@@ -66,6 +66,8 @@ The new methods are:
 
 `partialeigen(decomp,σ) -> λ,v` which does the same thing as `partialeigen(decomp)`, but undoes the shift `σ`.
 
+Two convenience extensions are provided for `partialeigen` which implicitly call `partialschur` before doing the eigendecomposition:
+
 `partialeigen(A,σ; kwargs...) -> λ,v` which shift-and-inverts `A` by `σ`. The eigenvalues returned are those closest to `σ`.
 
 `partialeigen(A,B,σ; diag_inv_B=false, kwargs...) -> λ,v` which shift-and-inverts the generalized eigenvalue problem `Ax=σBx`, as described [here](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Spectral-transformations-1). `diag_inv_B=true` means that `B` is diagonal and invertible, which makes for an especially efficient transformation.
