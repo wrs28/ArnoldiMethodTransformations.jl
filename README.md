@@ -27,7 +27,7 @@ A = S\D*S
 decomp, hist = partialschur(A,5.001)
 
 # get evecs
-λ, v = partialeigen(decomp,.5001)
+λ, v = partialeigen(decomp,5.001)
 
 display(decomp.eigenvalues)
 norm(A*v-v*diagm(0=>decomp.eigenvalues))
