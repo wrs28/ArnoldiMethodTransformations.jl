@@ -5,15 +5,15 @@ A package for easily interfacing with [ArnoldiMethod](https://github.com/haampie
 
 ## Installation
 
-In REPL, type either `] add git@github.com:wrs28/ArnoldiMethodWrapper.git` or
+In REPL, type either `] add git@github.com:wrs28/ArnoldiMethodTransformations.git` or
 ````JULIA
 using Pkg
-Pkg.add("git@github.com:wrs28/ArnoldiMethodWrapper.git")
+Pkg.add("git@github.com:wrs28/ArnoldiMethodTransformations.git")
 ````
 ## Example
 Ordinary eigenvalue problem `Ax=λx`
 ````JULIA
-using LinearAlgebra, ArnoldiMethod, ArnoldiMethodWrapper
+using LinearAlgebra, ArnoldiMethod, ArnoldiMethodTransformations
 
 # construct fixed eval matrix in random basis
 D = diagm(0=>[0,1,2,3,4,5,6,7,8,9])
@@ -33,7 +33,7 @@ norm(A*v-v*diagm(0=>decomp.eigenvalues))
 
 Generalized eigenvalue problem `Ax=λBx`
 ````JULIA
-using LinearAlgebra, ArnoldiMethod, ArnoldiMethodWrapper
+using LinearAlgebra, ArnoldiMethod, ArnoldiMethodTransformations
 
 # construct fixed eval matrix in random basis
 A = rand(ComplexF64,10,10)
