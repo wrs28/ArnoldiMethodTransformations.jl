@@ -10,6 +10,9 @@ In REPL, type either `] add git@github.com:wrs28/ArnoldiMethodTransformations.gi
 using Pkg
 Pkg.add("git@github.com:wrs28/ArnoldiMethodTransformations.git")
 ````
+
+This package does not export any new methods, it only extends some methods of [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl), which needs to be separately installed.
+
 ## Example
 Ordinary eigenvalue problem `Ax=λx`
 ````JULIA
@@ -24,7 +27,7 @@ A = S\D*S
 decomp, hist = partialschur(A,5.001)
 
 # get evecs
-_, v = partialeigen(decomp)
+λ, v = partialeigen(decomp)
 
 display(decomp.eigenvalues)
 norm(A*v-v*diagm(0=>decomp.eigenvalues))
@@ -43,12 +46,14 @@ B = rand(ComplexF64,10,10)
 decomp, hist = partialschur(A,B,.5)
 
 # get evecs
-_, v = partialeigen(decomp)
+λ, v = partialeigen(decomp)
 
 display(decomp.eigenvalues)
 norm(A*v-B*v*diagm(0=>decomp.eigenvalues))
 # should be ~1e-14 or smaller
 ````
+
+Note that in both cases, `ArnoldiMethod` needed to be explicitly brought into scope with `using`.
 
 ## Methods
 This package exports no methods, but extends `partialschur`  and `partialeigen` from [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl).
@@ -64,3 +69,11 @@ The new methods are:
 For both, `kwargs` are the keyword arguments from [`ArnoldiMethod.partialschur`](https://haampie.github.io/ArnoldiMethod.jl/stable/usage/01_getting_started.html#ArnoldiMethod.partialschur)
 
 Note that the shifting to an exact eigenvalue poses a problem, see note on [purification](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Purification-1).
+
+
+## Linear Solvers
+At some point a series of linear solve needs to be done. This is accomplished by doing an LU factorization on the relevant matrix, followed by a series of solves.
+
+There are three solvers currently available for use in this package: UMFPACK (via `Base.LinAlg`), [MUMPS](http://mumps.enseeiht.fr) (via [`MUMPS3`](https://github.com/wrs28/MUMPS3.jl)), and [Pardiso](https://pardiso-project.org) (via [`Pardiso`](https://github.com/JuliaSparse/Pardiso.jl)).
+
+MUMPS and Pardiso are often faster, and use significantly less memory, but require separate installation, which not all users will want to do. This optional dependency is implemented with [Requires.jl](https://github.com/MikeInnes/Requires.jl), and works like so: MUMPS is used for linear solve if MUMPS is loaded at the top level, Pardiso is used if Pardiso is loaded, else UMFPACK is used.
