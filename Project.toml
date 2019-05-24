@@ -1,7 +1,7 @@
 name = "ArnoldiMethodTransformations"
 uuid = "fede57cc-428a-11e9-3e5c-c149a0a4072d"
 repo = "https://github.com/wrs28/ArnoldiMethodTransformations.jl.git"
-version = "0.0.1"
+version = "1.0.0"
 
 [deps]
 ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
@@ -12,3 +12,9 @@ MUMPS3 = "8158958c-316f-11e9-3ff7-338d4f1f622e"
 Pardiso = "46dd5b70-b6fb-5a00-ae2d-e8fea33afaf2"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[extras]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+
+[targets]
+test = ["BenchmarkTools"]

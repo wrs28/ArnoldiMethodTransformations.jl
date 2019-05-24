@@ -8,7 +8,6 @@ B = rand(ComplexF64,10,10)
 decomp, hist = partialschur(A,B,.5)
 
 # get evecs
-λ, v = partialeigen(decomp)
+λ, v = partialeigen(decomp,.5)
 
-display(decomp.eigenvalues)
-norm(A*v-B*v*diagm(0=>decomp.eigenvalues))
+norm(A*v-B*v*diagm(0=>λ))

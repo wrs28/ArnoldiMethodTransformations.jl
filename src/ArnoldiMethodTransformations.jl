@@ -1,25 +1,28 @@
 """
-    module ArnoldiMethodWrapper
+    module ArnoldiMethodTransformations
 
-Provides convenience wrapper for accessing the package ArnoldiMethod.
+Provides convenience wrapper for interfacing with the package ArnoldiMethod.
 
 Implements the shift-and-invert transformation detailed [here](https://haampie.github.io/ArnoldiMethod.jl/stable/).
 
 The main functions are `partialschur(A,[B],σ; kwargs...)` and `partialeigen(A,[B],σ; kwargs...)`
 """
-module ArnoldiMethodWrapper
+module ArnoldiMethodTransformations
 
 using Requires
 
+const LUPACK_AUTO = Ref{Symbol}(:umfpack)
+
 function __init__()
-    LUPACK_AUTO=:umfpack
-    @require MUMPS3="" @eval begin
+    @require MUMPS3="da04e1cc-30fd-572f-bb4f-1f8673147195" @eval begin
             using MUMPS3, MPI
-            LUPACK_AUTO=:mumps
+            LUPACK_AUTO[]=:mumps
+            println("mumps here!")
         end
-    @require Pardiso="" @eval begin
+    @require Pardiso="46dd5b70-b6fb-5a00-ae2d-e8fea33afaf2" @eval begin
             using Pardiso
-            LUPACK_AUTO=:pardiso
+            LUPACK_AUTO[]=:pardiso
+            println("pardiso here!")
         end
 end
 
@@ -68,7 +71,7 @@ struct ShiftAndInvert{M,T,U,V,Σ}
     issymmetric::Bool
 
     function ShiftAndInvert(A::S, B::T, σ::Number; diag_inv_B::Bool, lupack::Symbol=:auto) where {S,T}
-        lupack==:auto ? lupack=LUPACK_AUTO : nothing
+        lupack==:auto ? lupack=LUPACK_AUTO[] : nothing
         onetype = one(eltype(S))*one(eltype(T))*one(σ)
         type = typeof(onetype)
         A, B = onetype*A, onetype*B
@@ -79,7 +82,6 @@ struct ShiftAndInvert{M,T,U,V,Σ}
                 matrix_fun = sparse
             else
                 α = Diagonal(map(x->1/x,diag(B)))*A-σ*I
-                display(α)
                 matrix_fun = Matrix
             end
             β = matrix_fun(onetype*I,size(B))
@@ -108,11 +110,6 @@ end
 
 # define action of ShiftAndInvert
 function (SI::ShiftAndInvert{M})(y,x) where M<:AbstractSolver
-    if M<:PSolver
-        try pardiso catch throw(ErrorException("Pardiso not loaded. Try again after `using Pardiso`")) end
-    elseif M<:MSolver
-        try Mumps catch throw(ErrorException("MUMPS3 not loaded. Try again after `using MUMPS3`")) end
-    end
     mul!(SI.temp, SI.B, x)
     if M<:PSolver
         pardiso(SI.A_lu,SI.temp2,spzeros(eltype(SI.B),size(SI.B)...),SI.temp)
@@ -128,6 +125,7 @@ end
 function initialize_according_to_package(lupack,issym,type,α,temp1,temp2)
     if lupack ∈ [:Pardiso,:pardiso,:PARDISO,:p]
         M = PSolver
+        try PardisoSolver catch; throw(ErrorException("Pardiso not loaded. Try again after `using Pardiso`")) end
         A_lu = PardisoSolver()
         if issym & (type<:Real)
             set_matrixtype!(A_lu,Pardiso.REAL_SYM)
@@ -140,11 +138,12 @@ function initialize_according_to_package(lupack,issym,type,α,temp1,temp2)
         end
         set_iparm!(A_lu,1,1) # don't revert to defaults
         set_phase!(A_lu,12) # analyze and factorize
-        pardiso(A_lu,temp2,α,temp1)
+        pardiso(A_lu,temp2,sparse(α),temp1)
         set_iparm!(A_lu,12,1) # transpose b/c of CSR vs SCS
         set_phase!(A_lu,33) # set to solve for future calls
     elseif lupack ∈ [:MUMPS,:Mumps,:mumps,:m]
         M = MSolver
+        try MPI catch; throw(ErrorException("MUMPS3 not loaded. Try again after `using MUMPS3`")) end
         MPI.Initialized() ? nothing : MPI.Init()
         A_lu = mumps_factorize(α)
     elseif lupack ∈ [:UMFPACK,:Umfpack,:umfpack,:u]
@@ -180,13 +179,23 @@ function ArnoldiMethod.partialschur(si::ShiftAndInvert; kwargs...)
     return partialschur(a; kwargs...)
 end
 function ArnoldiMethod.partialschur(A, σ::Number; lupack::Symbol=:auto, kwargs...)
-    partialschur(ShiftAndInvert(A, σ; lupack=lupack); kwargs...)
+    return partialschur(ShiftAndInvert(A, σ; lupack=lupack); kwargs...)
 end
 function ArnoldiMethod.partialschur(A, B, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), lupack=:auto, kwargs...)
-    partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, lupack=lupack); kwargs...)
+    return partialschur(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, lupack=lupack); kwargs...)
 end
 
 
+"""
+    partialeigen(decomp, σ)
+
+Transforms a partial Schur decomposition into an eigendecomposition, but undoes the
+shift-and-invert of the eigenvalues by σ.
+"""
+function ArnoldiMethod.partialeigen(decomp::ArnoldiMethod.PartialSchur, σ::Number)
+    λ, v = partialeigen(decomp)
+    return σ.+1 ./λ, v
+end
 """
     partialeigen(A, [B], σ; [diag_inv_B, untransform=true, lupack=:auto, kwargs...]) -> λ::Vector, v::Matrix, history
 
@@ -212,12 +221,12 @@ function ArnoldiMethod.partialeigen(si::ShiftAndInvert; kwargs...)
     get(kwargs,:untransform,true) ? λ = si.σ .+ 1 ./λ : nothing
     return λ, v, history
 end
-function ArnoldiMethod.partialeigen(A, σ::Number; lupack::Symbol=:auto, kwargs...)
-    partialeigen(ShiftAndInvert(A, σ; lupack=lupack); kwargs...)
+function ArnoldiMethod.partialeigen(A::AbstractArray, σ::Number; lupack::Symbol=:auto, kwargs...)
+    return partialeigen(ShiftAndInvert(A, σ; lupack=lupack); kwargs...)
 end
-function ArnoldiMethod.partialeigen(A, B, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), lupack::Symbol=:auto, kwargs...)
-    partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, lupack=lupack); kwargs...)
+function ArnoldiMethod.partialeigen(A::AbstractArray, B::AbstractArray, σ::Number; diag_inv_B::Bool=isdiag(B)&&!any(iszero.(diag(B))), lupack::Symbol=:auto, kwargs...)
+    return partialeigen(ShiftAndInvert(A, B, σ; diag_inv_B=diag_inv_B, lupack=lupack); kwargs...)
 end
 
 
-end # module ArnoldiMethodWrapper
+end # module ArnoldiMethodArnoldiMethodTransformations
