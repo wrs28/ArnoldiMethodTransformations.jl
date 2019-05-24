@@ -74,4 +74,4 @@ Note that the shifting to an exact eigenvalue poses a problem, see note on [puri
 ## Linear Solvers
 There are three solvers currently available for use in this package: UMFPACK (via `Base.LinAlg`), [MUMPS](http://mumps.enseeiht.fr) (via [`MUMPS3`](https://github.com/wrs28/MUMPS3.jl)), and [Pardiso](https://pardiso-project.org) (via [`Pardiso`](https://github.com/JuliaSparse/Pardiso.jl)).
 
-MUMPS and Pardiso are often faster, and use significantly less memory, but require separate installation, which not all users will want to do. MUMPS is used for linear solve if `MUMPS3` is loaded at the top level, Pardiso is used if `Pardiso` is loaded, else UMFPACK is used (see [Requires.jl](https://github.com/MikeInnes/Requires.jl).
+MUMPS and Pardiso are often faster, and use significantly less memory, but require separate installation, which not all users will want to do. MUMPS is used for linear solve if `MUMPS3` is loaded at the top level, Pardiso is used if `Pardiso` is loaded, else UMFPACK is used (see [Requires.jl](https://github.com/MikeInnes/Requires.jl)).
