@@ -59,7 +59,7 @@ Note that in both cases, `ArnoldiMethod` needed to be explicitly brought into sc
 This package exports none of its own methods, but extends `partialschur`  and `partialeigen` from [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl).
 
 These are:
-
+---------------
     `partialschur(A, [B], σ; [diag_inv_B, lupack=:auto, kwargs...]) -> decomp, history`
 
 Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=σB*v`
@@ -71,7 +71,7 @@ Keyword `lupack` determines what linear algebra library to use. Options are `:pa
 
 For other keywords, see `ArnoldiMethod.partialschur`
 
-
+---------------
     partialeigen(decomp, σ)
 
 Transforms a partial Schur decomposition into an eigendecomposition, but undoes the shift-and-invert of the eigenvalues by `σ`.
