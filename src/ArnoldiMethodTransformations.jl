@@ -14,11 +14,11 @@ using Requires
 const LUPACK_AUTO = Ref{Symbol}(:umfpack)
 
 function __init__()
-    @require MUMPS3="da04e1cc-30fd-572f-bb4f-1f8673147195" @eval begin
-            using MUMPS3, MPI
-            LUPACK_AUTO[]=:mumps
-            println("mumps here!")
-        end
+    # @require MUMPS3="da04e1cc-30fd-572f-bb4f-1f8673147195" @eval begin
+            # using MUMPS3, MPI
+            # LUPACK_AUTO[]=:mumps
+            # println("mumps here!")
+        # end
     @require Pardiso="46dd5b70-b6fb-5a00-ae2d-e8fea33afaf2" @eval begin
             using Pardiso
             LUPACK_AUTO[]=:pardiso
