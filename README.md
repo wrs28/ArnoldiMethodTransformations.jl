@@ -56,24 +56,41 @@ norm(A*v-B*v*diagm(0=>decomp.eigenvalues))
 Note that in both cases, `ArnoldiMethod` needed to be explicitly brought into scope with `using`.
 
 ## Methods
-This package exports no methods, but extends `partialschur`  and `partialeigen` from [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl).
+This package exports none of its own methods, but extends `partialschur`  and `partialeigen` from [ArnoldiMethod](https://github.com/haampie/ArnoldiMethod.jl).
 
-The new methods are:
+These are:
 
-`partialschur(A,σ; kwargs...) -> decomp, hist` which shift-and-inverts `A` by `σ`. The eigenvalues returned are those closest to `σ`.
+    `partialschur(A, [B], σ; [diag_inv_B, lupack=:auto, kwargs...]) -> decomp, history`
 
-`partialschur(A,B,σ; diag_inv_B=false, kwargs...) -> decomp, hist` which shift-and-inverts the generalized eigenvalue problem `Ax=σBx`, as described [here](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Spectral-transformations-1). `diag_inv_B=true` means that `B` is diagonal and invertible, which makes for an especially efficient transformation.
+Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=σB*v`
 
-`partialeigen(decomp,σ) -> λ,v` which does the same thing as `partialeigen(decomp)`, but undoes the shift `σ`.
+Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables
+a simplified shift-and-invert scheme.
 
-Two convenience extensions are provided for `partialeigen` which implicitly call `partialschur` before doing the eigendecomposition:
+Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:umfpack`, and the default `:auto`, which chooses based on availability at the top level, in this order: PARDISO >  UMFPACK. For example, if at the top level there is only `using ArnoldiMethod, ArnoldiMethodTransformations`, will default to UMFPACK, while the additional `using Pardiso` will default to `:pardiso`.
 
-`partialeigen(A,σ; kwargs...) -> λ,v` which shift-and-inverts `A` by `σ`. The eigenvalues returned are those closest to `σ`.
+For other keywords, see `ArnoldiMethod.partialschur`
 
-`partialeigen(A,B,σ; diag_inv_B=false, kwargs...) -> λ,v` which shift-and-inverts the generalized eigenvalue problem `Ax=σBx`, as described [here](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Spectral-transformations-1). `diag_inv_B=true` means that `B` is diagonal and invertible, which makes for an especially efficient transformation.
 
-For all, `kwargs` are the keyword arguments from [`ArnoldiMethod.partialschur`](https://haampie.github.io/ArnoldiMethod.jl/stable/usage/01_getting_started.html#ArnoldiMethod.partialschur).
+    partialeigen(decomp, σ)
 
+Transforms a partial Schur decomposition into an eigendecomposition, but undoes the shift-and-invert of the eigenvalues by `σ`.
+
+
+    partialeigen(A, [B], σ; [diag_inv_B, untransform=true, lupack=:auto, kwargs...]) -> λ, v, history
+
+Partial eigendecomposition of `A`, with mass matrix `B` and shift `σ` , solving `A*v=λB*v` for the eigenvalues closest to `σ`
+
+If keyword `untransform=true`, the shift-invert transformation of the eigenvalues is inverted before returning
+
+Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables a simplified shift-and-invert scheme.
+
+Keyword `lupack` determines what linear algebra library to use. Options are `:pardiso`, `:umfpack`, and the default `:auto`, which chooses based on availability at the top level, in this order: PARDISO >  UMFPACK. For example, if at the top level there is only `using ArnoldiMethod, ArnoldiMethodTransformations`, will default to UMFPACK, while the additional `using Pardiso` will default to `:pardiso`.
+
+For other keywords, `see ArnoldiMethod.partialschur`
+
+
+------------
 Note that the shifting to an exact eigenvalue poses a problem, see note on [purification](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Purification-1).
 
 
