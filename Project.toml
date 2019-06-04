@@ -1,7 +1,7 @@
 name = "ArnoldiMethodTransformations"
 uuid = "fede57cc-428a-11e9-3e5c-c149a0a4072d"
 repo = "https://github.com/wrs28/ArnoldiMethodTransformations.jl.git"
-version = "1.0.0"
+version = "0.1.0"
 
 [deps]
 ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
