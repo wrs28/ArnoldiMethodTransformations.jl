@@ -1,6 +1,7 @@
 name = "ArnoldiMethodTransformations"
 uuid = "fede57cc-428a-11e9-3e5c-c149a0a4072d"
 repo = "https://github.com/wrs28/ArnoldiMethodTransformations.jl.git"
+authors = ["William R Sweeney <wrsweeney2@gmail.com>"]
 version = "0.1.0"
 
 [deps]
