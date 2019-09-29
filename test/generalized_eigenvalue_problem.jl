@@ -1,5 +1,7 @@
 using Test
-using LinearAlgebra, ArnoldiMethod, ArnoldiMethodTransformations
+using LinearAlgebra
+using ArnoldiMethod
+using ArnoldiMethodTransformations
 
 @testset "generalized eigenvalue problem: " begin
     for i ∈ 1:1000
