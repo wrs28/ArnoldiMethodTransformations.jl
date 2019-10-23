@@ -12,8 +12,11 @@ The constants `USOLVER`, `PSOLVER`, and `MSOLVER` are exported.
 module ArnoldiMethodTransformations
 
 export PSOLVER
+export PSolver
 export MSOLVER
+export MSolver
 export USOLVER
+export USolver
 
 using ArnoldiMethod
 using LinearAlgebra
