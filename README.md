@@ -70,7 +70,7 @@ It does export three constants: `USOLVER`, `PSOLVER`, `MSOLVER`.
 ---------------
     `partialschur(A, [B], σ; [diag_inv_B, lupack=USOLVER, kwargs...]) -> decomp, history`
 
-Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=σB*v`
+Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=σ*B*v`
 
 Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables
 a simplified shift-and-invert scheme.
