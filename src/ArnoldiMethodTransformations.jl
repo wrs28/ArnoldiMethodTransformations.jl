@@ -21,7 +21,8 @@ export USolver
 using ArnoldiMethod
 using LinearAlgebra
 using LinearMaps
-using Requires
+#using MUMPS
+using Pardiso
 using SparseArrays
 
 abstract type AbstractSolver end
@@ -38,12 +39,6 @@ const USOLVER = USolver()
 const DEFAULT_SOLVER = USOLVER
 const SOLVER_COLOR = :cyan
 const PRINTED_TYPE_COLOR = 171
-
-# load MUMPS or PARDISO as approprite
-function __init__()
-    @require MUMPS3="da04e1cc-30fd-572f-bb4f-1f8673147195" @eval using MUMPS3, MPI
-    @require Pardiso="46dd5b70-b6fb-5a00-ae2d-e8fea33afaf2" @eval using Pardiso
-end
 
 # main structure used internally
 struct ShiftAndInvert{M,TLU,TB,V,Σ,TZ}
@@ -185,7 +180,8 @@ end
 initialize_according_to_package(::USolver,α,args...) = USOLVER, lu(α)
 # MUMPS
 function initialize_according_to_package(::MSolver,α,args...)
-    try MPI catch; throw(ErrorException("MUMPS3 not loaded. Try again after `using MUMPS3`")) end
+    throw("MUMPS still under construction")
+    try MPI catch; throw(ErrorException("MUMPS not loaded. Try again after `using MUMPS`")) end
     MPI.Initialized() ? nothing : MPI.Init()
     return MSOLVER, mumps_factorize(α)
 end
