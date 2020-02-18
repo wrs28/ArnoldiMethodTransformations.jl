@@ -70,7 +70,7 @@ It does export three constants: `USOLVER`, `PSOLVER`, `MSOLVER`.
 ---------------
     `partialschur(A, [B], σ; [diag_inv_B, lupack=USOLVER, kwargs...]) -> decomp, history`
 
-Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=σ*B*v`
+Partial Schur decomposition of `A`, with shift `σ` and mass matrix `B`, solving `A*v=(λ-σ)*B*v` for its smallest eigenvalues.
 
 Keyword `diag_inv_B` defaults to `true` if `B` is both diagonal and invertible. This enables
 a simplified shift-and-invert scheme.
@@ -82,9 +82,10 @@ The relevant solver must be explicitly loaded at the top level to use it (e.g., 
 For other keywords, see `ArnoldiMethod.partialschur`
 
 ---------------
-    partialeigen(decomp, σ)
+    partialeigen(decomp, σ) -> λ, v
 
-Transforms a partial Schur decomposition into an eigendecomposition, but undoes the shift-and-invert of the eigenvalues by `σ`.
+Transforms a partial Schur decomposition into an eigendecomposition, outputting evals `λ` and evecs `v`.
+It undoes the shift-and-invert of the eigenvalues by `σ`.
 
 ------------
 Note that the shifting to an exact eigenvalue poses a problem, see note on [purification](https://haampie.github.io/ArnoldiMethod.jl/stable/theory.html#Purification-1).
@@ -93,7 +94,7 @@ Note that the shifting to an exact eigenvalue poses a problem, see note on [puri
 ## Linear Solvers
 There are two solvers currently available for use in this package: UMFPACK (via `Base.LinAlg`), and [Pardiso](https://pardiso-project.org) (via [`Pardiso`](https://github.com/JuliaSparse/Pardiso.jl)).
 
-Pardiso is often faster, and uses significantly less memory, but require separate installation, which not all users will want to do. This optional dependency is implemented with [Requires.jl](https://github.com/MikeInnes/Requires.jl).
+~~Pardiso is often faster, and uses significantly less memory, but require separate installation, which not all users will want to do. This optional dependency is implemented with [Requires.jl](https://github.com/MikeInnes/Requires.jl).~~
 
 The default solver is UMFPACK. To use another solver, such as Pardiso (assuming it is installed), use the keyword `:lupack=PSOLVER` in `partialschur`.
 

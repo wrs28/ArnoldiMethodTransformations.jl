@@ -308,7 +308,7 @@ partialschur
 
 
 """
-    partialeigen(decomp, σ)
+    partialeigen(decomp, σ) -> λ, v
 
 Transforms a partial Schur decomposition into an eigendecomposition, but undoes the
 shift-and-invert of the eigenvalues by σ.
