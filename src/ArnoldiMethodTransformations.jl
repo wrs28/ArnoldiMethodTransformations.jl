@@ -253,6 +253,12 @@ function ArnoldiMethod.partialschur(
 end
 
 # add method to partialeigen(decomp,σ)
+"""
+    partialeigen(decomp, σ) -> λ, v
+
+    Transforms a partial Schur decomposition into an eigendecomposition, outputting evals `λ` and evecs `v`.
+    It undoes the shift-and-invert of the eigenvalues by `σ`.
+"""
 function ArnoldiMethod.partialeigen(
             decomp::ArnoldiMethod.PartialSchur,
             σ::Number)
@@ -305,14 +311,5 @@ For other keywords, see ArnoldiMethod.partialschur
 see also: [`partialeigen`](@ref) in ArnoldiMethod
 """
 partialschur
-
-
-"""
-    partialeigen(decomp, σ) -> λ, v
-
-Transforms a partial Schur decomposition into an eigendecomposition, but undoes the
-shift-and-invert of the eigenvalues by σ.
-"""
-partialeigen
 
 end # module
